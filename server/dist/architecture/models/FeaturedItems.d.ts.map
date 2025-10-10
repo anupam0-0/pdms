@@ -1,0 +1,1 @@
+{"version":3,"file":"FeaturedItems.d.ts","sourceRoot":"","sources":["../../../src/architecture/models/FeaturedItems.ts"],"names":[],"mappings":"AAAA,OAAO,EAAU,KAAK,EAAS,QAAQ,EAAE,MAAM,UAAU,CAAC;AAE1D,MAAM,WAAW,cAAe,SAAQ,QAAQ;IAC/C,IAAI,EAAE;QACL,OAAO,EAAE,KAAK,CAAC,QAAQ,CAAC;QACxB,SAAS,EAAE,IAAI,CAAC;KAChB,CAAC;CACF;AAgCD,QAAA,MAAM,aAAa;;;;OAA8D,CAAC;AAElF,eAAe,aAAa,CAAC"}

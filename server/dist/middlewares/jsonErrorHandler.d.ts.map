@@ -1,0 +1,1 @@
+{"version":3,"file":"jsonErrorHandler.d.ts","sourceRoot":"","sources":["../../src/middlewares/jsonErrorHandler.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,YAAY,EAAE,MAAM,SAAS,CAAC;AAE1D,eAAO,MAAM,gBAAgB,GAAI,KAAK,GAAG,EAAE,KAAK,OAAO,EAAE,KAAK,QAAQ,EAAE,MAAM,YAAY,KAAG,IAc5F,CAAC"}
