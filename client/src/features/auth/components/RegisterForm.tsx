@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { register } from "@/api/authApi";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { register } from "@/api/auth.services";
 
 export function RegisterForm({
   className,
@@ -27,8 +26,7 @@ export function RegisterForm({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
-  const { setUser } = useAuth();
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,10 +44,10 @@ export function RegisterForm({
 
     try {
       const response = await register(formData);
-      console.log(response)
-      if (response.data.user) {
-        setUser(response.data.user);
-        router.push("/dashboard");
+      // console.log(response)
+      if (response.status == 200) {
+        // setUser(response.data.user);
+        redirect("/login");
       }
     } catch (err: unknown) {
       let errorMessage = "Registration failed. Please try again.";
@@ -117,7 +115,7 @@ export function RegisterForm({
                 />
               </div>
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className={`w-full ${isLoading ? "cursor-wait" : "cursor-pointer" } `} disabled={isLoading}>
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
                 {/* <Button variant="outline" className="w-full">

@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/api/authApi";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { login } from "@/api/auth.services";
 import { Eye, EyeClosed } from "lucide-react";
 
 export function LoginForm({
@@ -29,7 +28,6 @@ export function LoginForm({
   const [error, setError] = useState("");
   const [seePassword, setSeePassword] = useState(false);
   const router = useRouter();
-  const { setUser } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,10 +45,9 @@ export function LoginForm({
 
     try {
       const response = await login(formData);
-      console.log(response);
-      if (response.data.user) {
-        setUser(response.data.user);
-        router.push("/dashboard");
+      // console.log(response, response.status)
+      if (response.status == 200) {
+        router.replace("/profile");
       }
     } catch (err: unknown) {
       let errorMessage = "Login failed. Please try again.";
@@ -123,14 +120,17 @@ export function LoginForm({
                     aria-label={seePassword ? "Hide password" : "Show password"}
                   >
                     {!seePassword ? <EyeClosed /> : <Eye />}
-                    
-
-                    
                   </Button>
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className={`w-full ${
+                    isLoading ? "cursor-wait" : "cursor-pointer"
+                  } `}
+                  disabled={isLoading}
+                >
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
                 {/* <Button variant="outline" className="w-full">

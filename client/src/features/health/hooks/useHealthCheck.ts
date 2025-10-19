@@ -1,6 +1,6 @@
 "use client";
 
-import { checkHealth } from "@/api/utilsApi";
+import { checkHealth } from "@/api/health.services";
 import { useState, useCallback } from "react";
 
 export function useHealthCheck() {

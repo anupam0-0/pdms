@@ -1,8 +1,10 @@
 export interface AuthResponse {
+  success: boolean;
   message: string;
-  user: {
+  data: {
     id: string;
     name: string;
+    email: string;
     role: string;
   };
 }

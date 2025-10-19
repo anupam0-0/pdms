@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,16 +15,16 @@ import {
 } from "@/components/ui/card";
 
 const HomePage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      router.push("/dashboard");
+    if (isAuthenticated) {
+      router.replace("/profile");
     }
   }, [isAuthenticated, router]);
 
-  if (isAuthenticated()) {
+  if (isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -52,7 +52,7 @@ const HomePage = () => {
           </CardContent>
           <CardFooter>
             <Button variant="secondary" className="w-full">
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/profile">Dashboard</Link>
             </Button>
           </CardFooter>
         </Card>

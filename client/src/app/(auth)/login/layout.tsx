@@ -1,14 +1,7 @@
-
-import AuthLayout from "@/utils/layouts/AuthLayout";
-
 export default function LoginLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-    return (
-        <AuthLayout>
-            {children}
-        </AuthLayout>
-    );
+  return <div>{children}</div>;
 }
