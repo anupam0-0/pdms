@@ -11,9 +11,9 @@ export interface User {
   id: string;
   fullName: string;
   //   password: string;
+  email: string;
   role: UserRole;
-  adress: Address;
+  address?: Address;
   createdAt: string;
   updatedAt: string;
 }
-

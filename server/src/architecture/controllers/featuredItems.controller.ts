@@ -2,6 +2,14 @@ import { Request, Response } from 'express';
 import FeaturedItems from '../models/FeaturedItems';
 import Product from '../models/Product';
 import { authMiddleware } from '../../middlewares/auth';
+import {
+  sendSuccess,
+  sendCreated,
+  sendBadRequest,
+  sendNotFound,
+  sendForbidden,
+  sendServerError,
+} from '../../utils/responseHelper';
 
 // Get all featured items
 export const getAllFeaturedItems = async (req: Request, res: Response) => {
@@ -10,9 +18,9 @@ export const getAllFeaturedItems = async (req: Request, res: Response) => {
       .populate('item.product', 'name price category imageUrls')
       .sort({ createdAt: -1 });
     
-    res.json(featuredItems);
+    sendSuccess(res, 'Featured items fetched successfully', featuredItems);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching featured items', error });
+    sendServerError(res, 'Error fetching featured items', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -25,9 +33,9 @@ export const getActiveFeaturedItems = async (req: Request, res: Response) => {
       .populate('item.product', 'name price category imageUrls')
       .sort({ createdAt: -1 });
     
-    res.json(activeFeaturedItems);
+    sendSuccess(res, 'Active featured items fetched successfully', activeFeaturedItems);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching active featured items', error });
+    sendServerError(res, 'Error fetching active featured items', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -38,13 +46,13 @@ export const getFeaturedItemById = async (req: Request, res: Response): Promise<
       .populate('item.product', 'name price category imageUrls');
     
     if (!featuredItem) {
-      res.status(404).json({ message: 'Featured item not found' });
+      sendNotFound(res, 'Featured item not found', 'FeaturedItemNotFoundError');
       return;
     }
     
-    res.json(featuredItem);
+    sendSuccess(res, 'Featured item fetched successfully', featuredItem);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching featured item', error });
+    sendServerError(res, 'Error fetching featured item', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -52,7 +60,7 @@ export const getFeaturedItemById = async (req: Request, res: Response): Promise<
 export const createFeaturedItem = async (req: Request, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Admin access required' });
+      sendForbidden(res, 'Admin access required', 'AdminAccessRequiredError');
       return;
     }
     
@@ -61,7 +69,7 @@ export const createFeaturedItem = async (req: Request, res: Response): Promise<v
     // Check if product exists
     const productExists = await Product.findById(product);
     if (!productExists) {
-      res.status(400).json({ message: 'Product not found' });
+      sendBadRequest(res, 'Product not found', 'ProductNotFoundError');
       return;
     }
     
@@ -72,9 +80,7 @@ export const createFeaturedItem = async (req: Request, res: Response): Promise<v
     });
     
     if (existingFeatured) {
-      res.status(400).json({ 
-        message: 'Product is already featured and not expired' 
-      });
+      sendBadRequest(res, 'Product is already featured and not expired', 'ProductAlreadyFeaturedError');
       return;
     }
     
@@ -91,9 +97,9 @@ export const createFeaturedItem = async (req: Request, res: Response): Promise<v
     const populatedFeaturedItem = await FeaturedItems.findById(featuredItem._id)
       .populate('item.product', 'name price category imageUrls');
     
-    res.status(201).json(populatedFeaturedItem);
+    sendCreated(res, 'Featured item created successfully', populatedFeaturedItem);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating featured item', error });
+    sendBadRequest(res, 'Error creating featured item', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -101,7 +107,7 @@ export const createFeaturedItem = async (req: Request, res: Response): Promise<v
 export const updateFeaturedItem = async (req: Request, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Admin access required' });
+      sendForbidden(res, 'Admin access required', 'AdminAccessRequiredError');
       return;
     }
     
@@ -112,13 +118,13 @@ export const updateFeaturedItem = async (req: Request, res: Response): Promise<v
     ).populate('item.product', 'name price category imageUrls');
     
     if (!featuredItem) {
-      res.status(404).json({ message: 'Featured item not found' });
+      sendNotFound(res, 'Featured item not found', 'FeaturedItemNotFoundError');
       return;
     }
     
-    res.json(featuredItem);
+    sendSuccess(res, 'Featured item updated successfully', featuredItem);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating featured item', error });
+    sendBadRequest(res, 'Error updating featured item', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -126,19 +132,19 @@ export const updateFeaturedItem = async (req: Request, res: Response): Promise<v
 export const deleteFeaturedItem = async (req: Request, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Admin access required' });
+      sendForbidden(res, 'Admin access required', 'AdminAccessRequiredError');
       return;
     }
     
     const featuredItem = await FeaturedItems.findByIdAndDelete(req.params.id);
     if (!featuredItem) {
-      res.status(404).json({ message: 'Featured item not found' });
+      sendNotFound(res, 'Featured item not found', 'FeaturedItemNotFoundError');
       return;
     }
     
-    res.json({ message: 'Featured item deleted successfully' });
+    sendSuccess(res, 'Featured item deleted successfully');
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting featured item', error });
+    sendServerError(res, 'Error deleting featured item', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -146,7 +152,7 @@ export const deleteFeaturedItem = async (req: Request, res: Response): Promise<v
 export const cleanupExpiredFeaturedItems = async (req: Request, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Admin access required' });
+      sendForbidden(res, 'Admin access required', 'AdminAccessRequiredError');
       return;
     }
     
@@ -154,10 +160,8 @@ export const cleanupExpiredFeaturedItems = async (req: Request, res: Response): 
       'item.expiresOn': { $lt: new Date() }
     });
     
-    res.json({ 
-      message: `Cleaned up ${result.deletedCount} expired featured items` 
-    });
+    sendSuccess(res, `Cleaned up ${result.deletedCount} expired featured items`, { deletedCount: result.deletedCount });
   } catch (error) {
-    res.status(500).json({ message: 'Error cleaning up expired items', error });
+    sendServerError(res, 'Error cleaning up expired items', error instanceof Error ? error.message : 'Unknown error');
   }
 };

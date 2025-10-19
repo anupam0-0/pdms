@@ -19,7 +19,7 @@ const ProductCard = (item: Product) => {
   const hasStock = typeof item.stock === "number";
 
   return (
-    <Card className="w-full max-w-xs shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer">
+    <Card className="w-full  max-w-sm shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer">
       <CardHeader className="">
         <div className="flex justify-center items-center mb-2">
           <Image

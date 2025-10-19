@@ -1,12 +1,13 @@
 import { Response } from "express";
+const isProd = process.env.NODE_ENV === "production";
 
 /**
  * Cookie configuration options
  */
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "none" as const,
+  secure: isProd,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
 };
 
@@ -26,8 +27,8 @@ export const setAuthCookie = (res: Response, token: string): void => {
 export const clearAuthCookie = (res: Response): void => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    secure: isProd,
+    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
   });
 };
 
@@ -61,8 +62,8 @@ export const clearCustomCookie = (
 ): void => {
   const clearOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none" as const,
+    secure: isProd,
+    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
     ...options,
   };
   res.clearCookie(name, clearOptions);

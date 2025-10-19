@@ -9,6 +9,7 @@ export const API_PATHS = {
     LOGIN: "/auth/login",
     LOGOUT: "/auth/logout",
     GETME: "/auth/me",
+    PROFILE: "/auth/profile",
   },
 
   PRODUCTS: {
@@ -38,4 +39,3 @@ export const API_PATHS = {
     DELETE_FEATURED_EXPIRED_ITEMS: "/featured/cleanup/expired", // restricted
   },
 };
-

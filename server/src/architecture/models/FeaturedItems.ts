@@ -1,11 +1,5 @@
-import { Schema, Types, model, Document } from "mongoose";
-
-export interface IFeaturedItems extends Document {
-	item: {
-		product: Types.ObjectId;
-		expiresOn: Date;
-	};
-}
+import { Schema, model } from "mongoose";
+import { IFeaturedItems } from "../../types";
 
 const FeaturedItemsSchema = new Schema<IFeaturedItems>({
 	item: {

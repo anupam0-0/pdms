@@ -1,14 +1,22 @@
 import { Request, Response } from 'express';
 import Product from '../models/Product';
 import { authMiddleware } from '../../middlewares/auth';
+import {
+  sendSuccess,
+  sendCreated,
+  sendBadRequest,
+  sendNotFound,
+  sendForbidden,
+  sendServerError,
+} from '../../utils/responseHelper';
 
 // Get all products
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const products = await Product.find().populate('seller', 'fullName email');
-    res.json(products);
+    sendSuccess(res, 'Products fetched successfully', products);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching products', error });
+    sendServerError(res, 'Error fetching products', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -17,12 +25,12 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
   try {
     const product = await Product.findById(req.params.id).populate('seller', 'fullName email');
     if (!product) {
-      res.status(404).json({ message: 'Product not found' });
+      sendNotFound(res, 'Product not found', 'ProductNotFoundError');
       return;
     }
-    res.json(product);
+    sendSuccess(res, 'Product fetched successfully', product);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching product', error });
+    sendServerError(res, 'Error fetching product', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -35,9 +43,9 @@ export const createProduct = async (req: Request, res: Response) => {
     };
     const product = new Product(productData);
     await product.save();
-    res.status(201).json(product);
+    sendCreated(res, 'Product created successfully', product);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating product', error });
+    sendBadRequest(res, 'Error creating product', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -46,13 +54,13 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
-      res.status(404).json({ message: 'Product not found' });
+      sendNotFound(res, 'Product not found', 'ProductNotFoundError');
       return;
     }
     
     // Check if user is the seller or admin
     if (product.seller.toString() !== (req.user as any)?._id.toString() && req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Not authorized to update this product' });
+      sendForbidden(res, 'Not authorized to update this product', 'UnauthorizedError');
       return;
     }
     
@@ -61,9 +69,9 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       req.body,
       { new: true, runValidators: true }
     );
-    res.json(updatedProduct);
+    sendSuccess(res, 'Product updated successfully', updatedProduct);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating product', error });
+    sendBadRequest(res, 'Error updating product', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -72,20 +80,20 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
-      res.status(404).json({ message: 'Product not found' });
+      sendNotFound(res, 'Product not found', 'ProductNotFoundError');
       return;
     }
     
     // Check if user is the seller or admin
     if (product.seller.toString() !== (req.user as any)?._id.toString() && req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Not authorized to delete this product' });
+      sendForbidden(res, 'Not authorized to delete this product', 'UnauthorizedError');
       return;
     }
     
     await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Product deleted successfully' });
+    sendSuccess(res, 'Product deleted successfully');
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting product', error });
+    sendServerError(res, 'Error deleting product', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -110,8 +118,8 @@ export const searchProducts = async (req: Request, res: Response) => {
     }
     
     const products = await Product.find(query).populate('seller', 'fullName email');
-    res.json(products);
+    sendSuccess(res, 'Products searched successfully', products);
   } catch (error) {
-    res.status(500).json({ message: 'Error searching products', error });
+    sendServerError(res, 'Error searching products', error instanceof Error ? error.message : 'Unknown error');
   }
 };

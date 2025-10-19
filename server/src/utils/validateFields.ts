@@ -1,12 +1,10 @@
+import { RegisterFields, LoginFields, EmailValidation, PasswordValidation, ValidationError } from '../types';
+
 export function validateRegisterFields({
   fullName,
   email,
   password,
-}: {
-  fullName?: string;
-  email?: string;
-  password?: string;
-}) {
+}: RegisterFields): ValidationError | null {
   if (!fullName || !email || !password) {
     return {
       message: "Missing required fields",
@@ -19,10 +17,7 @@ export function validateRegisterFields({
 export function validateLoginFields({
   email,
   password,
-}: {
-  email?: string;
-  password?: string;
-}) {
+}: LoginFields): ValidationError | null {
   if (!email || !password) {
     return {
       message: "Missing required fields",
@@ -32,7 +27,7 @@ export function validateLoginFields({
   return null;
 }
 
-export function isValidEmail({ email }: { email: string }) {
+export function isValidEmail({ email }: EmailValidation): ValidationError | null {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return {
@@ -43,7 +38,7 @@ export function isValidEmail({ email }: { email: string }) {
   return null;
 }
 
-export function isValidPassword({ password }: { password: string }) {
+export function isValidPassword({ password }: PasswordValidation): ValidationError | null {
     console.log(password)
   if (!password || password.length < 6 || password.length > 32) {
     return {

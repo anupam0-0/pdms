@@ -41,7 +41,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory", inventoryRoutes);
-app.use("/api/featured-items", featuredItemsRoutes);
+app.use("/api/featured", featuredItemsRoutes);
 // app.use("/api/admin", protected('admin'), authRoutes);
 
 

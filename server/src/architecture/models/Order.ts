@@ -1,25 +1,5 @@
-import mongoose, { Schema, model, Types, Document } from "mongoose";
-
-
-export interface IOrderItem {
-	product: Types.ObjectId;
-	quantity: number;
-	priceAtPurchase?: number;
-}
-
-export interface IOrder extends Document {
-	customer: Types.ObjectId;
-	items: IOrderItem[];
-	totalAmount: number;
-	status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-	paymentMethod: "cod" | "upi" | "card";
-	shippingAddress: {
-		line1?: string;
-		city?: string;
-		state?: string;
-		pincode?: string;
-	};
-}
+import mongoose, { Schema, model } from "mongoose";
+import { IOrder, IOrderItem } from "../../types";
 
 const orderSchema = new Schema<IOrder>(
 	{

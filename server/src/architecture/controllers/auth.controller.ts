@@ -9,10 +9,19 @@ import {
   validateLoginFields,
   validateRegisterFields,
 } from "../../utils/validateFields";
+import {
+  sendCreated,
+  sendSuccess,
+  sendBadRequest,
+  sendUnauthorized,
+  sendServerError,
+} from "../../utils/responseHelper";
+import User from "../models/User";
 
 export async function register(req: Request, res: Response): Promise<void> {
   try {
-    const {fullName, email, password } = req.body;
+    const { fullName, email, password } = req.body;
+    console.log("1:", req.body);
 
     // Validate required fields using a service function
     const missingFieldsError = validateRegisterFields({
@@ -21,7 +30,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       password,
     });
     if (missingFieldsError) {
-      res.status(400).json(missingFieldsError);
+      sendBadRequest(res, missingFieldsError.message, missingFieldsError.error);
       return;
     }
 
@@ -33,16 +42,16 @@ export async function register(req: Request, res: Response): Promise<void> {
     // }
 
     // Validate password length using a util function
-    const validPasswordError = isValidPassword({password});
+    const validPasswordError = isValidPassword({ password });
     if (validPasswordError) {
-      res.status(400).json(validPasswordError);
+      sendBadRequest(res, validPasswordError.message, validPasswordError.error);
       return;
     }
 
     // Check if user already exists
     const existingUser = await userService.findUserByEmail(email);
     if (existingUser) {
-      res.status(400).json({ message: "User already exists" });
+      sendBadRequest(res, "User already exists", "UserExistsError");
       return;
     }
 
@@ -65,24 +74,34 @@ export async function register(req: Request, res: Response): Promise<void> {
     // Set cookie
     setAuthCookie(res, token);
 
-    res.status(201).json({
-      message: "User registered successfully",
-      user: { id: user._id, name: user.fullName, role: user.role },
+    sendCreated(res, "User registered successfully", {
+      userId: user._id,
+      name: user.fullName,
+      email: user.email,
+      role: user.role,
     });
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ message: "Server error" });
+    sendServerError(
+      res,
+      "Something went wrong, please try again later",
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
+    // console.log(req.body);
 
     // Validate required fields
     const missingFieldsError = validateLoginFields({ email, password });
     if (missingFieldsError) {
-      res.status(400).json(missingFieldsError);
+      sendBadRequest(res, missingFieldsError.message, missingFieldsError.error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Invalid credentials: Missing Field ");
+      }
       return;
     }
 
@@ -96,18 +115,30 @@ export async function login(req: Request, res: Response): Promise<void> {
     // Find user by email
     const user = await userService.findUserByEmail(email);
     if (!user) {
-      res.status(401).json({
-        message: "Invalid credentials: User not found. Pls register first",
-      });
+      sendUnauthorized(
+        res,
+        "Invalid credentials: User not found. Please register first",
+        "UserNotFoundError"
+      );
+      if (process.env.NODE_ENV === "development") {
+        console.error(
+          "Invalid credentials: User not found. Pls register first "
+        );
+      }
       return;
     }
 
     // Check password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      res
-        .status(401)
-        .json({ message: "Invalid credentials: Password didn't match" });
+      sendUnauthorized(
+        res,
+        "Invalid credentials: Password didn't match",
+        "InvalidPasswordError"
+      );
+      if (process.env.NODE_ENV === "development") {
+        console.error("Invalid credentials: Password didn't match");
+      }
       return;
     }
 
@@ -128,45 +159,80 @@ export async function login(req: Request, res: Response): Promise<void> {
     // Set cookie
     setAuthCookie(res, token);
 
-    res.json({
-      message: "Login successful",
-      user: { id: user._id, name: user.fullName, role: user.role },
+    sendSuccess(res, "Login successful", {
+      userId: user._id,
+      name: user.fullName,
+      email: user.email,
+      role: user.role,
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error" });
+    sendServerError(
+      res,
+      "Something went wrong, please try again later",
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
 }
 
 export async function logout(req: Request, res: Response): Promise<void> {
   try {
     clearAuthCookie(res);
-    res.json({ message: "Logout successful" });
+    sendSuccess(res, "Logout successful");
   } catch (error) {
     console.error("Logout error:", error);
-    res.status(500).json({ message: "Server error" });
+    sendServerError(
+      res,
+      "Something went wrong, please try again later",
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
+}
+
+export async function getMe(req: Request, res: Response): Promise<void> {
+  try {
+    const user = req.user;
+    // console.log(user);
+    if (!user) {
+      sendUnauthorized(res, "User not found", "UserNotFoundError");
+      return;
+    }
+    // console.log(user);
+    sendSuccess(res, "User profile fetched successfully", {
+      id: user.id,
+      name: user.fullName,
+      email: user.email,
+      role: user.role,
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    sendServerError(
+      res,
+      "Something went wrong, please try again later",
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
 }
 
 export async function getProfile(req: Request, res: Response): Promise<void> {
   try {
     const user = req.user;
+    const profile = await User.findById(user?.id).select("-password");
     // console.log(user);
     if (!user) {
-      res.status(401).json({ message: "User not found" });
+      sendUnauthorized(res, "User not found", "UserNotFoundError");
       return;
     }
-	// console.log(user);
-    res.json({
-      user: {
-        id: user.id,
-        name: user.fullName,
-        email: user.email,
-        role: user.role,
-      },
+    // console.log(user);
+    sendSuccess(res, "User profile fetched successfully", {
+      profile,
     });
   } catch (error) {
     console.error("Get profile error:", error);
-    res.status(500).json({ message: "Server error" });
+    sendServerError(
+      res,
+      "Something went wrong, please try again later",
+      error instanceof Error ? error.message : "Unknown error"
+    );
   }
 }

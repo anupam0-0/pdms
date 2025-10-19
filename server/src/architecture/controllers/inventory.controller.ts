@@ -2,6 +2,14 @@ import { Request, Response } from 'express';
 import Inventory from '../models/Inventory';
 import Product from '../models/Product';
 import { authMiddleware } from '../../middlewares/auth';
+import {
+  sendSuccess,
+  sendCreated,
+  sendBadRequest,
+  sendNotFound,
+  sendForbidden,
+  sendServerError,
+} from '../../utils/responseHelper';
 
 // Get all inventory (seller sees their own, admin sees all)
 export const getAllInventory = async (req: Request, res: Response) => {
@@ -18,9 +26,9 @@ export const getAllInventory = async (req: Request, res: Response) => {
       .populate('seller', 'fullName email')
       .sort({ createdAt: -1 });
     
-    res.json(inventory);
+    sendSuccess(res, 'Inventory fetched successfully', inventory);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching inventory', error });
+    sendServerError(res, 'Error fetching inventory', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -32,19 +40,19 @@ export const getInventoryById = async (req: Request, res: Response): Promise<voi
       .populate('seller', 'fullName email');
     
     if (!inventory) {
-      res.status(404).json({ message: 'Inventory record not found' });
+      sendNotFound(res, 'Inventory record not found', 'InventoryNotFoundError');
       return;
     }
     
     // Check if user can view this inventory
     if (req.user?.role !== 'admin' && inventory.seller._id.toString() !== (req.user as any)?._id.toString()) {
-      res.status(403).json({ message: 'Not authorized to view this inventory' });
+      sendForbidden(res, 'Not authorized to view this inventory', 'UnauthorizedError');
       return;
     }
     
-    res.json(inventory);
+    sendSuccess(res, 'Inventory fetched successfully', inventory);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching inventory', error });
+    sendServerError(res, 'Error fetching inventory', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -56,7 +64,7 @@ export const createInventory = async (req: Request, res: Response): Promise<void
     // Check if product exists
     const productExists = await Product.findById(product);
     if (!productExists) {
-      res.status(400).json({ message: 'Product not found' });
+      sendBadRequest(res, 'Product not found', 'ProductNotFoundError');
       return;
     }
     
@@ -67,9 +75,7 @@ export const createInventory = async (req: Request, res: Response): Promise<void
     });
     
     if (existingInventory) {
-      res.status(400).json({ 
-        message: 'Inventory record already exists for this product' 
-      });
+      sendBadRequest(res, 'Inventory record already exists for this product', 'InventoryExistsError');
       return;
     }
     
@@ -87,9 +93,9 @@ export const createInventory = async (req: Request, res: Response): Promise<void
       .populate('product', 'name price category imageUrls')
       .populate('seller', 'fullName email');
     
-    res.status(201).json(populatedInventory);
+    sendCreated(res, 'Inventory record created successfully', populatedInventory);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating inventory', error });
+    sendBadRequest(res, 'Error creating inventory', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -98,13 +104,13 @@ export const updateInventory = async (req: Request, res: Response): Promise<void
   try {
     const inventory = await Inventory.findById(req.params.id);
     if (!inventory) {
-      res.status(404).json({ message: 'Inventory record not found' });
+      sendNotFound(res, 'Inventory record not found', 'InventoryNotFoundError');
       return;
     }
     
     // Check if user can update this inventory
     if (req.user?.role !== 'admin' && inventory.seller.toString() !== (req.user as any)?._id.toString()) {
-      res.status(403).json({ message: 'Not authorized to update this inventory' });
+      sendForbidden(res, 'Not authorized to update this inventory', 'UnauthorizedError');
       return;
     }
     
@@ -115,9 +121,9 @@ export const updateInventory = async (req: Request, res: Response): Promise<void
     ).populate('product', 'name price category imageUrls')
      .populate('seller', 'fullName email');
     
-    res.json(updatedInventory);
+    sendSuccess(res, 'Inventory updated successfully', updatedInventory);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating inventory', error });
+    sendBadRequest(res, 'Error updating inventory', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -126,20 +132,20 @@ export const deleteInventory = async (req: Request, res: Response): Promise<void
   try {
     const inventory = await Inventory.findById(req.params.id);
     if (!inventory) {
-      res.status(404).json({ message: 'Inventory record not found' });
+      sendNotFound(res, 'Inventory record not found', 'InventoryNotFoundError');
       return;
     }
     
     // Check if user can delete this inventory
     if (req.user?.role !== 'admin' && inventory.seller.toString() !== (req.user as any)?._id.toString()) {
-      res.status(403).json({ message: 'Not authorized to delete this inventory' });
+      sendForbidden(res, 'Not authorized to delete this inventory', 'UnauthorizedError');
       return;
     }
     
     await Inventory.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Inventory record deleted successfully' });
+    sendSuccess(res, 'Inventory record deleted successfully');
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting inventory', error });
+    sendServerError(res, 'Error deleting inventory', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -160,8 +166,8 @@ export const getLowStockItems = async (req: Request, res: Response) => {
       .populate('seller', 'fullName email')
       .sort({ stock: 1 });
     
-    res.json(lowStockItems);
+    sendSuccess(res, 'Low stock items fetched successfully', lowStockItems);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching low stock items', error });
+    sendServerError(res, 'Error fetching low stock items', error instanceof Error ? error.message : 'Unknown error');
   }
 };

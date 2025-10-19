@@ -3,6 +3,14 @@ import Order from '../models/Order';
 import Product from '../models/Product';
 import Inventory from '../models/Inventory';
 import { authMiddleware } from '../../middlewares/auth';
+import {
+  sendSuccess,
+  sendCreated,
+  sendBadRequest,
+  sendNotFound,
+  sendForbidden,
+  sendServerError,
+} from '../../utils/responseHelper';
 
 // Get all orders (user sees their own, admin sees all)
 export const getAllOrders = async (req: Request, res: Response) => {
@@ -19,9 +27,9 @@ export const getAllOrders = async (req: Request, res: Response) => {
       .populate('items.product', 'name price imageUrls')
       .sort({ createdAt: -1 });
     
-    res.json(orders);
+    sendSuccess(res, 'Orders fetched successfully', orders);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders', error });
+    sendServerError(res, 'Error fetching orders', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -33,19 +41,19 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
       .populate('items.product', 'name price imageUrls');
     
     if (!order) {
-      res.status(404).json({ message: 'Order not found' });
+      sendNotFound(res, 'Order not found', 'OrderNotFoundError');
       return;
     }
     
     // Check if user can view this order
     if (req.user?.role !== 'admin' && order.customer._id.toString() !== (req.user as any)?._id.toString()) {
-      res.status(403).json({ message: 'Not authorized to view this order' });
+      sendForbidden(res, 'Not authorized to view this order', 'UnauthorizedError');
       return;
     }
     
-    res.json(order);
+    sendSuccess(res, 'Order fetched successfully', order);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching order', error });
+    sendServerError(res, 'Error fetching order', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -61,7 +69,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     for (const item of items) {
       const product = await Product.findById(item.product);
       if (!product) {
-        res.status(400).json({ message: `Product ${item.product} not found` });
+        sendBadRequest(res, `Product ${item.product} not found`, 'ProductNotFoundError');
         return;
       }
       
@@ -72,9 +80,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       });
       
       if (!inventory || inventory.stock < item.quantity) {
-        res.status(400).json({ 
-          message: `Insufficient stock for product ${product.name}` 
-        });
+        sendBadRequest(res, `Insufficient stock for product ${product.name}`, 'InsufficientStockError');
         return;
       }
       
@@ -111,9 +117,9 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       .populate('customer', 'fullName email')
       .populate('items.product', 'name price imageUrls');
     
-    res.status(201).json(populatedOrder);
+    sendCreated(res, 'Order created successfully', populatedOrder);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating order', error });
+    sendBadRequest(res, 'Error creating order', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -121,7 +127,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 export const updateOrderStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'admin') {
-      res.status(403).json({ message: 'Admin access required' });
+      sendForbidden(res, 'Admin access required', 'AdminAccessRequiredError');
       return;
     }
     
@@ -134,13 +140,13 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
      .populate('items.product', 'name price imageUrls');
     
     if (!order) {
-      res.status(404).json({ message: 'Order not found' });
+      sendNotFound(res, 'Order not found', 'OrderNotFoundError');
       return;
     }
     
-    res.json(order);
+    sendSuccess(res, 'Order status updated successfully', order);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating order status', error });
+    sendBadRequest(res, 'Error updating order status', error instanceof Error ? error.message : 'Unknown error');
   }
 };
 
@@ -149,21 +155,19 @@ export const cancelOrder = async (req: Request, res: Response): Promise<void> =>
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
-      res.status(404).json({ message: 'Order not found' });
+      sendNotFound(res, 'Order not found', 'OrderNotFoundError');
       return;
     }
     
     // Check if user can cancel this order
     if (req.user?.role !== 'admin' && order.customer.toString() !== (req.user as any)?._id.toString()) {
-      res.status(403).json({ message: 'Not authorized to cancel this order' });
+      sendForbidden(res, 'Not authorized to cancel this order', 'UnauthorizedError');
       return;
     }
     
     // Only allow cancellation if order is pending or processing
     if (!['pending', 'processing'].includes(order.status)) {
-      res.status(400).json({ 
-        message: 'Order cannot be cancelled in current status' 
-      });
+      sendBadRequest(res, 'Order cannot be cancelled in current status', 'OrderCancellationNotAllowedError');
       return;
     }
     
@@ -179,8 +183,8 @@ export const cancelOrder = async (req: Request, res: Response): Promise<void> =>
       );
     }
     
-    res.json({ message: 'Order cancelled successfully' });
+    sendSuccess(res, 'Order cancelled successfully');
   } catch (error) {
-    res.status(500).json({ message: 'Error cancelling order', error });
+    sendServerError(res, 'Error cancelling order', error instanceof Error ? error.message : 'Unknown error');
   }
 };

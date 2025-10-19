@@ -7,7 +7,7 @@ const ProductsGrid = ({ items }: { items: Product[] }) => {
   logger("log", items);
   return (
     <div className="w-full">
-      <div className="grid max-w-[90rem] mx-auto grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 w-full gap-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 w-full gap-x-6 gap-y-6">
         {Array.isArray(items) && items.length > 0 ? (
           items.map((item, i) => (
             <div key={i}>

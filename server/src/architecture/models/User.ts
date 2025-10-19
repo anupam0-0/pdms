@@ -1,17 +1,5 @@
-import { Schema, model, Document } from "mongoose";
-
-export interface IUser extends Document {
-	fullName: string;
-	email: string;
-	password: string;
-	role: "user" | "seller" | "admin";
-	address: {
-		line1: string;
-		city: string;
-		state: string;
-		pincode: string;
-	};
-}
+import { Schema, model } from "mongoose";
+import { IUser } from "../../types";
 
 const userSchema = new Schema<IUser>(
 	{

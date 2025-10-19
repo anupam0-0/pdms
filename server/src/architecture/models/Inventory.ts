@@ -1,11 +1,5 @@
-import mongoose, { Document, Schema, model, Types } from "mongoose";
-
-export interface IInventory extends Document {
-	product: Types.ObjectId;
-	seller: Types.ObjectId;
-	stock: number;
-	lowStockThreshold?: number;
-}
+import mongoose, { Schema, model } from "mongoose";
+import { IInventory } from "../../types";
 
 const inventorySchema = new Schema<IInventory>(
 	{
